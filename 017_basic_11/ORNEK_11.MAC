@@ -1,0 +1,179 @@
+
+	NOLIST
+; PICBASIC PRO(TM) Compiler 2.60, (c) 1998, 2009 microEngineering Labs, Inc. All Rights Reserved. 
+
+LABEL?L macro Label
+        RST?RP
+    ifdef PM_USED
+        LALL
+Label
+        XALL
+    else
+Label
+    endif
+    endm
+
+ADD?BWW macro Bin, Win, Wout
+        MOVE?BA Bin
+    if ((Wout) == (Win))
+        CHK?RP  Wout
+        addwf   Wout, F
+        btfsc   STATUS, C
+        incf    (Wout) + 1, F
+    else
+        CHK?RP  Win
+        addwf   Win, W
+        MOVE?AB Wout
+        MOVE?BA (Win) + 1
+        btfsc   STATUS, C
+        addlw   1
+        MOVE?AB (Wout) + 1
+    endif
+    endm
+
+DIV?WCW macro Win, Cin, Wout
+    if ((Cin) == 2)
+        bcf     STATUS, C
+      if ((Wout) == (Win))
+        CHK?RP  Wout
+        rrf     (Wout) + 1, F
+        rrf     Wout, F
+      else
+        CHK?RP  Win
+        rrf     (Win) + 1, W
+        MOVE?AB (Wout) + 1
+        CHK?RP  Win
+        rrf     Win, W
+        MOVE?AB Wout
+      endif
+    else
+        MOVE?WW Win, R0
+        MOVE?CW Cin, R1
+        L?CALL  DIV
+        MOVE?AWW R0, Wout
+    endif
+    endm
+DIV_USED = 1
+
+MOD?WCB macro Win, Cin, Bout
+        MOVE?WW Win, R0
+        MOVE?CW Cin, R1
+        L?CALL  DIV
+        MOVE?BB R2, Bout
+    endm
+DIV_USED = 1
+
+MUL?BCW macro Bin, Cin, Wout
+        MOVE?BW Bin, R3
+        MOVE?CW Cin, R1
+        L?CALL  MUL
+        MOVE?AWW R2, Wout
+    endm
+MUL_USED = 1
+
+SUB?WBW macro Win, Bin, Wout
+    if ((Wout) == (Win))
+        MOVE?BA Bin
+        CHK?RP  Wout
+        subwf   Wout, F
+        btfss   STATUS, C
+        decf    (Wout) + 1, F
+    else
+        MOVE?BA Bin
+        CHK?RP  Win
+        subwf   Win, W
+        MOVE?AB Wout
+        MOVE?BA (Win) + 1
+        btfss   STATUS, C
+        addlw   -1
+        MOVE?AB (Wout) + 1
+    endif
+    endm
+
+GOTO?L macro Label
+        L?GOTO  Label
+    endm
+
+LOOKUP?BCLB macro Bin, Cin, Label, Bout
+    local dojump, valtbl
+        MOVE?BA Bin
+        sublw   (Cin) - 1
+        BIT?GOTO 0, STATUS, C, Label
+        L?CALL  dojump
+        MOVE?AB Bout
+        L?GOTO  Label
+dojump  movlw   high (valtbl)
+        movwf   PCLATH
+        MOVE?BA Bin
+        RST?RP
+	addlw	low (valtbl)
+	btfsc	STATUS, C
+	incf	PCLATH, F
+	movwf	PCL
+valtbl
+    endm
+
+LURET?C macro Cin
+        retlw   Cin
+    endm
+
+PAUSE?C macro Cin
+    if (((Cin) >> 8) == 0)
+        MOVE?CA Cin
+        L?CALL  PAUSE
+    else
+        MOVE?CB (Cin) >> 8, R1 + 1
+        MOVE?CA low (Cin)
+        L?CALL  PAUSEL
+    endif
+    endm
+PAUSE_USED = 1
+
+PAUSEUS?C macro Cin
+    if (((Cin) >> 8) == 0)
+        movlw   Cin
+        L?CALL  PAUSEUS
+    else
+        MOVE?CB (Cin) >> 8, R0 + 1
+        MOVE?CA low (Cin)
+        L?CALL  PAUSEUSL
+    endif
+    endm
+PAUSEUS_USED = 1
+
+SHIFTCLOCK?T macro Regin, Bitin
+        BIT?R2  Regin, Bitin
+    endm
+
+SHIFTDATA?T macro Regin, Bitin
+        BIT?R1  Regin, Bitin
+    endm
+
+SHIFTIN?BC macro Bout, Cin
+    if ((Cin) == 8)
+        L?CALL  SHIFTIN8
+    else
+        movlw   Cin
+        L?CALL  SHIFTIN
+    endif
+        MOVE?AB Bout
+    endm
+SHIFTIN_USED = 1
+
+SHIFTMODE?C macro Cin
+        MOVE?CB Cin, GOP
+    endm
+
+SHIFTOUT?BC macro Bin, Cin
+        MOVE?BW Bin, R0
+    if ((Cin) == 8)
+        L?CALL  SHIFTOUT8
+    else
+        movlw   Cin
+        L?CALL  SHIFTOUT
+    endif
+    endm
+SHIFTOUT_USED = 1
+
+
+	LIST
